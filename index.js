@@ -19,24 +19,8 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 		collection.ensureIndex({'date':1}, function(){})
 		});
 
-
-		/*var dbDepth = function(callback) { btcePublic.depth("btc_usd", function(err, data) {
-				if (!err) {
-					try{
-						callback(err,data);
-					}
-					catch (err) {
-
-						}
-				}
-
-				});};*/
-
-
-		var dbTrades0 = function () {btcePublic.trades("btc_usd", function(err, data) {
-							if (!err) {	
-								try{
-									data.forEach(function(a){
+		var tradeSave = function(arrayTrades) {
+			arrayTrades.forEach(function(a){
 										db.collection('trades', function(err,collection){
 											if (!err) { 
 												collection.findOne({'tid':a.tid}, function(err, result) {
@@ -51,12 +35,59 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 												}
 										});
 									 });
-								}
-							catch (err) {
 
-								}
-							}
-						});};
+		};
+
+		var currentTimeServer = -1;
+
+		var newCandel = function(currentTimeServer, candelLapseSeconds) {
+			//verifico el ultimo time del ultimo candel.
+			db.collection('candels',function(err,collection){
+				if (!err) { 
+							collection.findOnes({},{ sort:[['timeServerClose',-1]]}, function(err, result) {
+								if (!err) { 
+										if (!result) {
+											//si el tiempo transcurrido es mayor o igual a candelLapseSeconds creo una nueva candela.
+											if ((currentTimeServer-result.timeServerClose)>=candelLapseSeconds) {
+												db.collection('trades',function(err,collection){
+                                                    if (!err){
+                                                            var dateStar = result.timeServerClose;
+                                                            var dateEnd = result.timeServerClose + candelLapseSeconds;
+                                                            var candel = {};
+                                                            db.find({"date": {$lt:dateStar, $gte:dateEnd}},function(err,result){
+                                                                if (!err) {
+
+                                                                    candel.timeOpen = dateStar;
+                                                                    candel.timeClose = dateEnd;
+                                                                    candel.openPrice;
+                                                                    candel.closePrice;
+                                                                    candel.minPrice;
+                                                                    candel.maxPrice;
+                                                                    candel.avgPrice;
+                                                                    candel.avgAmountPrice;
+                                                                    candel.transactions;
+                                                                    candel.volumeBTC;
+                                                                }
+                                                                else {}
+                                                           });
+                                                    }
+                                                    else{
+
+                                                    }
+                                                });
+											}
+												
+										} else {
+												//console.log('SI HAY, tid:' + a.tid);
+												}
+											}
+							});
+						   }
+
+			});
+
+		};
+
 
 		var dbTrades = function(callback) {btcePublic.trades("btc_usd", function(err, data) {
 				if (!err) {
@@ -78,37 +109,23 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 						callback(err,data);
 					}
 					catch (err) {
-
 						}
 				}
 
 				});};
 
-		var dbDepthTime = function(err,result) {
-				var aTime = result[0].ticker.server_time;
-				var resul = {};
-
-				resul.timeServer = aTime;
-
+		var ejecutarCiclo = function(err,result) {
 				if (!err) {
 					try{
-						Trades = result[1];
-						Trades.forEach(function(a){
-										db.collection('trades', function(err,collection){
-											if (!err) { 
-												collection.findOne({'tid':a.tid}, function(err, result) {
-														if (!err) { 
-															if (!result) {
-																collection.insert(a, function(){});
-															} else {
-																//console.log('SI HAY, tid:' + a.tid);
-															}
-														}
-													});
-												}
-										});
-									 });
+						var time_server = result[0].ticker.server_time;
+						var tradesBatch = result[1];
+						if (time_server > currentTimeServer) currentTimeServer = time_server; 
 						
+						//Tengo que levantar el tiempo de la ultima candela y fijarme si se cumplio el periodo
+						async.serie([
+							tradeSave(tradesBatch),
+							newCandel(currentTimeServer,60)
+							]);
 					}
 					catch (err) {
 
@@ -118,9 +135,9 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 
 		setInterval(function () {
 			async.parallel([
-			    dbTicker,
-			    dbTrades],
-				dbDepthTime);
+			    dbTrades,
+			    dbTicker],
+				ejecutarCiclo);
 			dbTrades();
 		},5000)})();
 });
