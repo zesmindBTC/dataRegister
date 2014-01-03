@@ -6,7 +6,7 @@ var mongoClient = require('mongodb').MongoClient;
 var async = require('async');
 
 //var MONGOHQ_URL="mongodb://nodejitsu:de9720a1df0ff9ea226b0d60eaa61459@linus.mongohq.com:10032/nodejitsudb5735702882";
-var MONGOHQ_URL="mongodb://localhost:27017/b10";
+var MONGOHQ_URL="mongodb://localhost:27017/b105";
 
 mongoClient.connect(MONGOHQ_URL, function(error, db) {
 	"use strict";
@@ -45,12 +45,16 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
             var newCandel = function(candelLapseSeconds) {
                 var starTimeCandel;
                 var endTimeCandel;
-                //si es la primera vez que se ejecuta
-                if (lastCandelTimeClose ===-1) lastCandelTimeClose = currentTimeServer;
+
+
                 if ((currentTimeServer-lastCandelTimeClose)>= candelLapseSeconds){
-                  //si estuvo mucho tiempo sin operar puede estar desactualiada "lastCandelTimeclose"
-                    if ((currentTimeServer-lastCandelTimeClose)>= 2*candelLapseSeconds) (lastCandelTimeClose = currentTimeServer);
-                    createCandel(lastCandelTimeClose,lastCandelTimeClose+candelLapseSeconds);
+                  //si estuvo mucho tiempo sin operar puede estar desactualizada "lastCandelTimeclose"
+                    if ((currentTimeServer-lastCandelTimeClose)>= 2*candelLapseSeconds) {
+                        (lastCandelTimeClose = currentTimeServer);
+                    }
+                    else{
+                        createCandel(lastCandelTimeClose,lastCandelTimeClose+candelLapseSeconds);
+                    }
                 };
                 };
 
@@ -58,7 +62,8 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
                 var collectionTrades = db.collection("trades");
                 var candel = {};
 
-                collectionTrades.find({"date": {$lt:dateStar, $gte:dateEnd}},function(err,result){
+                console.log("db.trades.find({date: {$lt: " + dateEnd + ", $gte:" + dateStar + "}})")
+                collectionTrades.find({"date": {$lt:dateEnd, $gte:dateStar}}).toArray(function(err,result){
                     var openPrice= 0;
                     var closePrice=0;
                     var minPrice=0;
@@ -68,41 +73,46 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
                     var transactions=0;
                     var volumeBTC=0;
                     if (!err) {
-                        openPrice = result[0].price;
-                        closePrice = result[result.length-1];
-                        transactions = result.length;
-                        minPrice = result[0].price;
-                        maxPrice = result[0].price;
+                    	if (result.length > 0) {
+	                        openPrice = result[0].price;
+	                        closePrice = result[result.length-1].price;
+	                        transactions = result.length;
+	                        minPrice = result[0].price;
+	                        maxPrice = result[0].price;
 
-                        result.forEach(function(a){
-                            avgPrice += a.price;
-                            avgAmountPrice += a.price * a.amount;
-                            volumeBTC += a.amount;
-                            if (a.price < minPrice) (minPrice = a.price);
-                            if (a.price > maxPrice)(maxPrice = a.price);
-                        });
+	                        result.forEach(function(a){
+	                            avgPrice += a.price;
+	                            avgAmountPrice += a.price * a.amount;
+	                            volumeBTC += a.amount;
+	                            if (a.price < minPrice) (minPrice = a.price);
+	                            if (a.price > maxPrice)(maxPrice = a.price);
+	                        });
 
-                        avgPrice = avgPrice/transactions;
-                        avgAmountPrice = avgAmountPrice/volumeBTC;
+	                        avgPrice = avgPrice/transactions;
+	                        avgAmountPrice = avgAmountPrice/volumeBTC;
 
 
-                        candel.timeOpen = dateStar;
-                        candel.timeClose = dateEnd;
-                        candel.openPrice = openPrice;
-                        candel.closePrice = closePrice;
-                        candel.minPrice = minPrice;
-                        candel.maxPrice = maxPrice;
-                        candel.avgPrice = avgPrice;
-                        candel.avgAmountPrice = avgAmountPrice;
-                        candel.transactions = transactions;
-                        candel.volumeBTC = volumeBTC;
+	                        candel.timeOpen = dateStar;
+	                        candel.timeClose = dateEnd;
+	                        candel.openPrice = openPrice;
+	                        candel.closePrice = closePrice;
+	                        candel.minPrice = minPrice;
+	                        candel.maxPrice = maxPrice;
+	                        candel.avgPrice = avgPrice;
+	                        candel.avgAmountPrice = avgAmountPrice;
+	                        candel.transactions = transactions;
+	                        candel.volumeBTC = volumeBTC;
 
-                        if (maxPrice > 0) {
-                            return  candel;
-                        }
-                        else{
-                            return null;
-                        }
+	                        if (maxPrice > 0) {
+	                            return  candel;
+	                        }
+	                        else{
+	                            return null;
+	                        }
+	                    }
+	                    else{
+	                    	console.log("no se encontraron trades para el candel");
+	                    }
                     }
                     else {
                         return null;
@@ -139,12 +149,13 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 					try{
 						var time_server = result[1].ticker.server_time;
 						var tradesBatch = result[0];
-						if (time_server > currentTimeServer) currentTimeServer = time_server; 
+                        //se actualiza el time_server (tambien si es la primera vez que se ejecuta
+						if (time_server > currentTimeServer) (currentTimeServer = time_server);
 						
 						//Tengo que levantar el tiempo de la ultima candela y fijarme si se cumplio el periodo
 						async.serie([
 							tradeSave(tradesBatch),
-							newCandel(currentTimeServer,60)
+							newCandel(60)
 							]);
 					}
 					catch (err) {
@@ -158,6 +169,5 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 			    dbTrades,
 			    dbTicker],
 				ejecutarCiclo);
-			dbTrades();
 		},5000)})();
 });
