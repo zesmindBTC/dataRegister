@@ -6,7 +6,7 @@ var mongoClient = require('mongodb').MongoClient;
 var async = require('async');
 
 //var MONGOHQ_URL="mongodb://nodejitsu:de9720a1df0ff9ea226b0d60eaa61459@linus.mongohq.com:10032/nodejitsudb5735702882";
-var MONGOHQ_URL="mongodb://localhost:27017/b107";
+var MONGOHQ_URL="mongodb://localhost:27017/b201";
 
 mongoClient.connect(MONGOHQ_URL, function(error, db) {
 	"use strict";
@@ -19,8 +19,6 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 		collection.ensureIndex({'date':1}, function(){})
 		});
 
-        var currentTimeServer = -1;
-        var lastCandelTimeClose = -1;
 
 		var dbTrades = function() {btcePublic.trades("btc_usd", function(err, data) {
 				if (!err) {
@@ -32,6 +30,7 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
                                         if (!err) {
                                             if (!result) {
                                                 collection.insert(a, function(){});
+                                                //console.log(a.tid);
                                             } else {
                                                 //console.log('SI HAY, tid:' + a.tid);
                                             }
@@ -49,6 +48,6 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
 				});
         };
 
-		setInterval(dbTrades,5000);
+		setInterval(dbTrades,3000);
         })();
 });
