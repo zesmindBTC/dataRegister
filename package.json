@@ -1,33 +1,28 @@
 {
-  "name": "btc-e",
-  "description": "btc-e.com API client for node.js",
-  "homepage": "",
-  "keywords": [
-    "btc-e",
-    "btc",
-    "ltc",
-    "bitcoin",
-    "litecoin"
-  ],
-  "author": "lucas",
-  "licenses": [
-    {
-      "type": "ISC",
-      "url": ""
+  "version": "0.0.1-40",
+  "apps": {
+    "default": {
+      "name": "zesBotRegister1",
+      "subdomain": "zesBotRegister1b",
+      "private": true
+    },
+    "production": {
+      "name": "zesmind",
+      "subdomain": "register"
     }
-  ],
-  "dependencies": {
-    "request": "2.16.6",
-    "mongodb": "*",
-    "async": "*"
   },
-  "main": "index.js",
-  "engines": {
-    "node": ">=0.8"
-  },
-  "version": "0.0.11-5",
-  "subdomain": "zesmind-registradorDatos3",
   "scripts": {
     "start": "node index.js"
+  },
+  "dependencies": {
+    "request": "*",
+    "mongodb": "*",
+    "crypto": "*",
+    "querystring": "*"
+  },
+  "name": "zesbotRegister1",
+  "subdomain": "btczesmind-dataRegister",
+  "engines": {
+    "node": "0.10.x"
   }
 }

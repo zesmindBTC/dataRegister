@@ -1,12 +1,8 @@
-var http = require('http');
 var BTCE = require('./btc-e.js');
-var mongo = require('mongodb');
-var url = require('url');
 var mongoClient = require('mongodb').MongoClient;
-var async = require('async');
 
-//var MONGOHQ_URL="mongodb://nodejitsu:de9720a1df0ff9ea226b0d60eaa61459@linus.mongohq.com:10032/nodejitsudb5735702882";
-var MONGOHQ_URL="mongodb://localhost:27017/b201";
+var MONGOHQ_URL="mongodb://nodejitsu:2a714a4c81707a77b8b5cad1ef44eb65@linus.mongohq.com:10050/nodejitsudb3696440756";
+//var MONGOHQ_URL="mongodb://localhost:27017/dbp10";
 
 mongoClient.connect(MONGOHQ_URL, function(error, db) {
 	"use strict";
@@ -30,7 +26,6 @@ mongoClient.connect(MONGOHQ_URL, function(error, db) {
                                         if (!err) {
                                             if (!result) {
                                                 collection.insert(a, function(){});
-                                                //console.log(a.tid);
                                             } else {
                                                 //console.log('SI HAY, tid:' + a.tid);
                                             }
