@@ -1,0 +1,21 @@
+export:
+mongoexport --host dharma.mongohq.com --port 10051 --username nodejitsu --password d558c04811085a87670aa6a1c38c1efe --collection trades --db nodejitsudb6947821225 --out db1.json
+
+mongodb://nodejitsu:d558c04811085a87670aa6a1c38c1efe  dharma.mongohq.com:10051/nodejitsudb6947821225
+
+conect:
+mongo dharma.mongohq.com:10051/nodejitsudb6947821225 -u nodejitsu -p d558c04811085a87670aa6a1c38c1efe
+
+
+Import a PC
+mongoimport --collection contacts --db datos_v1 --file db1.json
+
+DB depth
+mongodb://nodejitsu:de9720a1df0ff9ea226b0d60eaa61459@linus.mongohq.com:10032/nodejitsudb5735702882
+
+C:\mongodb\bin\mongo linus.mongohq.com:10032/nodejitsudb5735702882 -u nodejitsu -p de9720a1df0ff9ea226b0d60eaa61459
+
+mongoexport --host linus.mongohq.com --port 10032 --username nodejitsu --password de9720a1df0ff9ea226b0d60eaa61459 --collection depth --db nodejitsudb5735702882 --out depth1.json
+
+MongoExport_csv
+mongoexport --csv -d datos_juano -c trades -f "date","price","amount","tid","trade_type" -o export.csv
